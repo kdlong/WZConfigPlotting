@@ -17,6 +17,11 @@ def readJson(json_file_name):
             print(err)
     return json_info
 
+def getRebin(args):
+    vals = args.split(":")
+    x = [float(i.strip()) for i in vals]
+    return [x[0]+x[2]*i for i in range(int((x[1]-x[0])/x[2]))]
+
 def getDefaultParser():
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output_file", type=str, default="",
@@ -25,11 +30,13 @@ def getDefaultParser():
     debug = parser.add_mutually_exclusive_group()
     debug.add_argument("--debug", action='store_true',
                         help="Print debug info")
+    debug.add_argument("--noRatioUnc", action='store_true',
+                        help="No uncertainty in ratio")
     debug.add_argument("--quiet", action='store_true',
                         help="Print only warnings info")
     parser.add_argument("--hist_file", type=str, default="",
                         help="Read histograms from file")
-    parser.add_argument("--rebin", type=lambda x: range(*[int(i) for i in x.split(":")]) if \
+    parser.add_argument("--rebin", type=lambda x: getRebin(x) if \
                                 ":" in x else [float(i) for i in x.split(",")], default=0,
                         help="Rebin (integer)")
     parser.add_argument("--legend_left", action="store_true",

@@ -73,7 +73,7 @@ def makePlots(hist_stacks, data_hists, name, args, signal_stacks=[0], errors=[])
         elif args.preliminary:
             lumi_text = "Preliminary" 
         if args.simulation:
-            lumi_text += "Simulation" 
+            lumi_text = "Simulation " + lumi_text 
 
         ROOT.CMSlumi(canvas, 0, 11, "%s (13 TeV)" % scale_label, lumi_text)
     if args.extra_text != "":
@@ -99,7 +99,8 @@ def makePlots(hist_stacks, data_hists, name, args, signal_stacks=[0], errors=[])
     if not args.no_ratio:
         canvas = plotter.splitCanvas(canvas, canvas_dimensions,
                 "#scale[0.85]{Data / Pred.}" if data_hists[0] else args.ratio_text,
-                [float(i) for i in args.ratio_range]
+                [float(i) for i in args.ratio_range],
+                args.noRatioUnc
         )
     return canvas
 def makePlot(hist_stack, data_hist, name, args, signal_stack=0, same=""):
@@ -232,7 +233,7 @@ def getHistFactory(config_factory, selection, filelist, luminosity=1, hist_file=
                 ROOT.SetOwnership(sumweights_hist, False)
                 weight_info = WeightInfo.WeightInfo(
                         mc_info[base_name]['cross_section']*kfac,
-                        sumweights_hist.Integral() if sumweights_hist else 0
+                        sumweights_hist.Integral(0, sumweights_hist.GetNbinsX()+1) if sumweights_hist else 0
                 )
         else:
             weight_info = WeightInfo.WeightInfo(1, 1)
@@ -273,6 +274,19 @@ def getConfigHist(hist_factory, branch_name, bin_info, plot_group, selection, st
             if entry["fromFile"]:
                 chan = state
                 state_hist_name = str("%s/%s_%s" % (name, branch_name, state))
+                if "dress" in plot_group: 
+                    state_hist_name = state_hist_name.replace("_lhe", "")
+                    state_hist_name = state_hist_name.replace("_barelep", "")
+                    state_hist_name = state_hist_name.replace("_born", "")
+                elif "bare" in plot_group: 
+                    state_hist_name = state_hist_name.replace("_lhe", "_barelep")
+                    state_hist_name = state_hist_name.replace("_born", "_barelep")
+                elif "prefsr" in plot_group: 
+                    state_hist_name = state_hist_name.replace("_lhe", "_prefsr")
+                    state_hist_name = state_hist_name.replace("_born", "_prefsr")
+                elif "lhe" in plot_group: 
+                    state_hist_name = state_hist_name.replace("_prefsr", "_lhe")
+                    state_hist_name = state_hist_name.replace("_born", "_prefsr")
                 if "nonprompt" in str(plot_group).lower():
                     splitName = state_hist_name.rsplit(branch_name, 1)
                     state_hist_name = ''.join(splitName[:-1] +[branch_name, "_Fakes", splitName[-1]])

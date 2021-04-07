@@ -30,6 +30,7 @@ class FromFileHistProducer(HistProducer):
         hist.Scale(scalefac)
         # This causes GetEntries() to return 1 greater than the "actual"
         # number of entries in the hist
+        #if "dynnlo" not in hist_name:
         hist = self.rebin(hist, binning)
         if overflow:
             num_bins = hist.GetNbinsX()

@@ -53,7 +53,8 @@ def main():
         '-'*80 + '\n'
 
     rtfile = ROOT.TFile(args.hist_file)
-    colors = [ROOT.TColor.GetColor(x) for x in ["#a6cee3","#1f78b4","#b2df8a", "#33a02c", "#fb9a99", "#fdbf6f",
+    #colors = [ROOT.TColor.GetColor(x) for x in ["#a6cee3","#1f78b4","#b2df8a", "#33a02c", "#fb9a99", "#fdbf6f",
+    colors = [ROOT.TColor.GetColor(x) for x in ["#b2df8a", "#33a02c", "#fb9a99", "#fdbf6f",
                     "#e31a1c","#ff7f00","#cab2d6","#6a3d9a", "#ffff99", "#b15928",]
     ]
 
@@ -71,13 +72,21 @@ def main():
         if plot_name.count(file_names[0]) > 1:
             names = plot_name.split("_"+file_names[0])
             plot_name = "".join([names[0], "_"+file_names[0]]+names[1:])
+
+        # To avoid having to paste the file name again and again if you want
+        # to plot multiple variations
+        while len(file_names) < len(systematics):
+            file_names.append(file_names[0]) 
+            
         for i, file_name in enumerate(file_names):
             systematic = systematics[i]
             central_hist = 0
             for chan in args.channels.split(","):
                 hist_name = file_name.replace("_standalone", "") + "/"+ "_".join([branch, chan])
-                uphist_name = hist_name.replace("_"+chan, "_"+"_".join([systematic+"Up", chan]))
-                downhist_name = hist_name.replace("_"+chan, "_"+"_".join([systematic+"Down", chan]))
+                print hist_name
+                names = hist_name.rsplit("_"+chan, 1)
+                uphist_name = "_".join([names[0], systematic+"Up", chan]) if systematic != "None" else hist_name
+                downhist_name = "_".join([names[0],systematic+"Down", chan]) if systematic != "None" else hist_name
 
                 if not central_hist:
                     central_hist = rtfile.Get(hist_name)
@@ -85,6 +94,7 @@ def main():
                     if not central_hist:
                         raise ValueError("Failed to find hist %s in file %s" % (hist_name, file_name))
                     up_hist = rtfile.Get(uphist_name)
+                    print uphist_name
                     up_hist.SetName(uphist_name+"_%i" % i)
                     down_hist = rtfile.Get(downhist_name)
                     down_hist.SetLineColor(ROOT.kYellow)
@@ -124,9 +134,9 @@ def main():
                 up_hist.Scale(scale_fac)
                 down_hist.Scale(scale_fac)
             with open("temp.txt", "a") as mc_file:
-                mc_file.write("\nYield for %s is %0.2f" % (file_name, central_hist.Integral()))
-                mc_file.write("\nYield up for var %s for %s is %0.2f" % (file_name, systematic, up_hist.Integral()))
-                mc_file.write("\nYield down for var %s for %s is %0.2f" % (file_name, systematic, down_hist.Integral()))
+                mc_file.write("\nYield for %s is %0.2f (%i entries)" % (file_name, central_hist.Integral(), central_hist.GetEntries()))
+                mc_file.write("\nYield up for var %s for %s is %0.2f (%i entries)" % (file_name, systematic, up_hist.Integral(), up_hist.GetEntries()))
+                mc_file.write("\nYield down for var %s for %s is %0.2f (%i entries)" % (file_name, systematic, down_hist.Integral(), down_hist.GetEntries()))
             
             branch_name = branch.replace("_Fakes", "")
             config_factory.setHistAttributes(central_hist, branch_name, file_name)
@@ -139,12 +149,12 @@ def main():
             down_hist.SetFillColor(0)
             
             central_hist.SetLineStyle(1)
-            central_hist.SetLineWidth(2)
-            up_hist.SetLineWidth(2)
-            down_hist.SetLineWidth(2)
+            central_hist.SetLineWidth(1)
+            up_hist.SetLineWidth(1)
+            down_hist.SetLineWidth(1)
             up_hist.SetLineStyle(5)
-            down_hist.SetLineStyle(5)
-            if i != 0:
+            down_hist.SetLineStyle(3)
+            if i != 0 and file_names[i] == file_names[i-1]:
                 up_hist.SetLineColor(colors[i])
                 down_hist.SetLineColor(colors[i])
 
@@ -181,7 +191,7 @@ def main():
             )
             ratioPad = canvas.FindObject("ratioPad")
             hist = ratioPad.GetListOfPrimitives().FindObject("canvas_central_ratioHist")
-            hist.GetXaxis().SetLabelSize(0.175)
+            hist.GetXaxis().SetLabelSize(0.15)
             hist.GetXaxis().SetLabelOffset(0.03)
             hist.GetXaxis().SetTitleOffset(1.15)
             canvas.Update()
