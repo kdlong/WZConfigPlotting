@@ -62,8 +62,7 @@ def makePlots(hist_stacks, data_hists, name, args, signal_stacks=[0], errors=[])
     legend = getPrettyLegend(hist_stacks[0], data_hists[0], signal_stacks[0], histErrors, coords)
     legend.Draw()
 
-    if not args.no_decorations:
-        ROOT.dotrootImport('kdlong/CMSPlotDecorations')
+    if not args.no_decorations and hasattr(ROOT, "CMSlumi"):
         scale_label = "Normalized to Unity" if args.luminosity < 0 else \
             "%0.1f fb^{-1}" % args.luminosity
         
@@ -432,8 +431,8 @@ def getPlotPaths(selection, folder_name, write_log_file=False):
         storage_area = "/nfs_scratch/kdlong"
         html_area = "/afs/hep.wisc.edu/home/kdlong/public_html"
     else:
-        storage_area = "/eos/home-k/%s" % os.environ["USER"]
-        html_area = "/afs/cern.ch/user/k/%s/www" % os.environ["USER"]
+        storage_area = "/eos/user/k/%s" % os.environ["USER"]
+        html_area = "/eos/user/k/%s/www" % os.environ["USER"]
     base_dir = "%s/PlottingResults" % storage_area
     plot_path = "/".join([base_dir, selection] +
        (['{:%Y-%m-%d}'.format(datetime.datetime.today()),
